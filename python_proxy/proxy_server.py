@@ -116,8 +116,8 @@ def upload_files():
     files = request.files.getlist('files')
     category = request.form.get('category', None)
 
-    if not category:
-        return jsonify({"error": "No category provided"}), 400
+    # if not category:
+    #     return jsonify({"error": "No category provided"}), 400
 
     if not files:
         return jsonify({"error": "No selected files"}), 400
@@ -166,12 +166,21 @@ def load_chunks_delta(db_connection, chunk_id, filename, delta=10):
     return combined_text
 
 
-def load_embeddings_from_db(db_connection, category):
+def load_embeddings_from_db(db_connection, categories):
     cursor = db_connection.cursor()
-    if category and category.lower() != 'any':
-        cursor.execute("SELECT pdf_file, doc_id, embedding FROM embeddings WHERE category = %s", (category,))
+    #idk..
+    if not isinstance(categories, list):
+        raise ValueError("Categories must be a list")
+
+    if not categories or (len(categories) == 1 and categories[0].lower() == 'any'):
+        query = "SELECT pdf_file, doc_id, embedding FROM embeddings"
+        params = ()
     else:
-        cursor.execute("SELECT pdf_file, doc_id, embedding FROM embeddings")
+        placeholders = ', '.join(['%s'] * len(categories))
+        query = f"SELECT pdf_file, doc_id, embedding FROM embeddings WHERE category IN ({placeholders})"
+        params = tuple(categories)
+    
+    cursor.execute(query, params)
     rows = cursor.fetchall()
     
     embeddings = []
@@ -198,20 +207,20 @@ def load_embeddings_from_db(db_connection, category):
     return embeddings
 
 #?why do we have it here :D
-def find_best_match(query_embedding, embeddings):
-    best_match = None
-    highest_similarity = -1
+# def find_best_match(query_embedding, embeddings):
+#     best_match = None
+#     highest_similarity = -1
     
-    query_embedding_array = np.array(query_embedding, dtype=np.float32).reshape(1, -1)
+#     query_embedding_array = np.array(query_embedding, dtype=np.float32).reshape(1, -1)
     
-    for pdf_file, doc_id, embedding in embeddings:
-        embedding_array = np.array(embedding, dtype=np.float32).reshape(1, -1)
-        similarity = cosine_similarity(query_embedding_array, embedding_array)[0][0]
-        if similarity > highest_similarity:
-            highest_similarity = similarity
-            best_match = (pdf_file, doc_id)
+#     for pdf_file, doc_id, embedding in embeddings:
+#         embedding_array = np.array(embedding, dtype=np.float32).reshape(1, -1)
+#         similarity = cosine_similarity(query_embedding_array, embedding_array)[0][0]
+#         if similarity > highest_similarity:
+#             highest_similarity = similarity
+#             best_match = (pdf_file, doc_id)
     
-    return best_match
+#     return best_match
 
 @app.route("/api/generate", methods=["POST"])
 def generate_response():
@@ -219,12 +228,14 @@ def generate_response():
     print(data)
     model = data.get("model")
     query = data.get("prompt")
-    category = data.get("category", "any")
+    categories = data.get("category", ["any"])
     n_ctx = int(data.get("n_ctx",8192))
     delta = int(data.get("delta",30))
     stream = data.get("stream", False)
     if not query or not model:
         return jsonify({"error": "Model and prompt are required"}), 400
+    if not isinstance(categories, list):
+        return jsonify({"error": "Category must be a list"}), 400
 
     try:
         response = requests.post(
@@ -239,7 +250,7 @@ def generate_response():
             return jsonify({"error": "Failed to create query embedding"}), response.status_code
 
         db_connection = get_db_connection()
-        embeddings = load_embeddings_from_db(db_connection, category)
+        embeddings = load_embeddings_from_db(db_connection, categories)
         db_connection.close()
 
         best_match = ansemble(query_embedding, embeddings)
@@ -293,7 +304,7 @@ def generate_test_searches():
     data = request.get_json()
     model = data.get("model")
     query = data.get("prompt")
-    category = data.get("category", "any")
+    categories = data.get("category", ["any"])
     if not query or not model:
         return jsonify({"error": "Model and prompt are required"}), 400
 
@@ -312,7 +323,7 @@ def generate_test_searches():
 
         # Загрузка эмбеддингов из базы данных
         db_connection = get_db_connection()
-        embeddings = load_embeddings_from_db(db_connection, category)
+        embeddings = load_embeddings_from_db(db_connection, categories)
         db_connection.close()
 
         results = {}
