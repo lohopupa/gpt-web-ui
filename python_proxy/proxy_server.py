@@ -39,13 +39,13 @@ def get_db_connection():
             time.sleep(5)
 
 def create_embeddings_table():
-    #TODO: check if table exists
     db_connection = get_db_connection()
     cursor = db_connection.cursor()
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS embeddings (
         id SERIAL PRIMARY KEY,
         pdf_file TEXT NOT NULL,
+        category TEXT,
         doc_id INTEGER NOT NULL,
         embedding BYTEA NOT NULL,
         chunk_text TEXT NOT NULL
@@ -55,61 +55,104 @@ def create_embeddings_table():
     cursor.close()
     db_connection.close()
 
-def save_embeddings_to_db(embeddings, chunks, pdf_file, db_connection):
+def save_embeddings_to_db(embeddings, chunks, pdf_file, category, db_connection):
     cursor = db_connection.cursor()
     for doc_id, embedding in enumerate(embeddings):
-        # Преобразование списка в массив NumPy с типом float32
         embedding_array = np.array(embedding, dtype=np.float32)
-        
-        # Преобразование массива NumPy в байты
         embedding_bytes = embedding_array.tobytes()
-        
         cursor.execute(
-            "INSERT INTO embeddings (pdf_file, doc_id, embedding, chunk_text) VALUES (%s, %s, %s, %s)",
-            (pdf_file, doc_id, embedding_bytes, chunks[doc_id])
+            "INSERT INTO embeddings (pdf_file, category, doc_id, embedding, chunk_text) VALUES (%s, %s, %s, %s, %s)",
+            (pdf_file, category, doc_id, embedding_bytes, chunks[doc_id])
         )
     db_connection.commit()
 
-@app.route("/api/upload", methods=["POST"])
-def upload_file():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-    if file and file.filename.lower().endswith('.pdf'):
-        file_path = os.path.join('./tmp', file.filename)
-        file.save(file_path)
+# @app.route("/api/upload", methods=["POST"])
+# def upload_file():
+#     if 'file' not in request.files:
+#         return jsonify({"error": "No file part"}), 400
+#     file = request.files['file']
+#     if file.filename == '':
+#         return jsonify({"error": "No selected file"}), 400
+#     if 'category' not in request.form:
+#         return jsonify({"error": "No category provided"}), 400
+#     if file and file.filename.lower().endswith('.pdf'):
+#         file_path = os.path.join('./tmp', file.filename)
+#         file.save(file_path)
         
-        # # Загрузка и разбиение PDF
-        # docs = load_pdf_data(file_path=file_path)
-        # chunks = split_docs(documents=docs, chunk_size=8000,chunk_overlap=200)
+#         # # Загрузка и разбиение PDF
+#         # docs = load_pdf_data(file_path=file_path)
+#         # chunks = split_docs(documents=docs, chunk_size=8000,chunk_overlap=200)
         
-        data = load_pdf_data(file_path=file_path)
-        chunks = split_docs(document_text=data, chunk_size=500,chunk_overlap=200)
+#         data = load_pdf_data(file_path=file_path)
+#         chunks = split_docs(document_text=data, chunk_size=500,chunk_overlap=100)
 
-        # Создание эмбеддингов
-        embeddings = []
-        emb_chunks = []
-        for chunk in chunks:
-            for _ in range(3):
-                response = requests.post(
-                    f"{TARGET_HOST}/api/embed",
-                    json={"model": EMBED_MODEL_NAME, "input": chunk }#, "options": {"num_ctx": 4096}}
-                )
-                if response.status_code == 200:
-                    embeddings.extend(response.json()["embeddings"])
-                    emb_chunks.append(chunk)
-                    break
+#         # Создание эмбеддингов
+#         embeddings = []
+#         emb_chunks = []
+#         for chunk in chunks:
+#             for _ in range(3):
+#                 response = requests.post(
+#                     f"{TARGET_HOST}/api/embed",
+#                     json={"model": EMBED_MODEL_NAME, "input": chunk }#, "options": {"num_ctx": 4096}}
+#                 )
+#                 if response.status_code == 200:
+#                     embeddings.extend(response.json()["embeddings"])
+#                     emb_chunks.append(chunk)
+#                     break
         
-        # Сохранение эмбеддингов в БД
-        db_connection = get_db_connection()
-        save_embeddings_to_db(embeddings, emb_chunks, file_path, db_connection)
-        db_connection.close()
+#         db_connection = get_db_connection()
+#         save_embeddings_to_db(embeddings, emb_chunks, file_path, request.form['category'], db_connection)
+#         db_connection.close()
         
-        return jsonify({"message": "File uploaded and embeddings created successfully"}), 200
-    else:
-        return jsonify({"error": "Invalid file type"}), 400
+#         return jsonify({"message": "File uploaded and embeddings created successfully"}), 200
+#     else:
+#         return jsonify({"error": "Invalid file type"}), 400
+
+@app.route("/api/upload", methods=["POST"])
+def upload_files():
+    if 'files' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+
+    files = request.files.getlist('files')
+    category = request.form.get('category', None)
+
+    if not category:
+        return jsonify({"error": "No category provided"}), 400
+
+    if not files:
+        return jsonify({"error": "No selected files"}), 400
+
+    all_embeddings = []
+    for file in files:
+        if file.filename.lower().endswith('.pdf'):
+            file_path = os.path.join('./tmp', file.filename)
+            file.save(file_path)
+
+            data = load_pdf_data(file_path=file_path)
+            chunks = split_docs(document_text=data, chunk_size=500, chunk_overlap=200)
+
+            embeddings = []
+            emb_chunks = []
+            for chunk in chunks:
+                for _ in range(3):
+                    response = requests.post(
+                        f"{TARGET_HOST}/api/embed",
+                        json={"model": EMBED_MODEL_NAME, "input": chunk}
+                    )
+                    if response.status_code == 200:
+                        embeddings.extend(response.json()["embeddings"])
+                        emb_chunks.append(chunk)
+                        break
+            
+            db_connection = get_db_connection()
+            save_embeddings_to_db(embeddings, emb_chunks, file_path, category, db_connection)
+            db_connection.close()
+            
+            all_embeddings.append({"file": file.filename, "embeddings": embeddings})
+        else:
+            return jsonify({"error": f"Invalid file type for file {file.filename}"}), 400
+
+    return jsonify({"message": "Files uploaded and embeddings created successfully", "files": all_embeddings}), 200
 
 def load_chunks_delta(db_connection, chunk_id, filename, delta=10):
     cursor = db_connection.cursor()
@@ -123,24 +166,23 @@ def load_chunks_delta(db_connection, chunk_id, filename, delta=10):
     return combined_text
 
 
-def load_embeddings_from_db(db_connection):
+def load_embeddings_from_db(db_connection, category):
     cursor = db_connection.cursor()
-    cursor.execute("SELECT pdf_file, doc_id, embedding FROM embeddings")
+    if category and category.lower() != 'any':
+        cursor.execute("SELECT pdf_file, doc_id, embedding FROM embeddings WHERE category = %s", (category,))
+    else:
+        cursor.execute("SELECT pdf_file, doc_id, embedding FROM embeddings")
     rows = cursor.fetchall()
     
     embeddings = []
     for row in rows:
         pdf_file, doc_id, embedding = row
         
-        # Преобразование memoryview в байты
         embedding_bytes = bytes(embedding)
         
-        # Создание массива NumPy из байтов
-        # Определите длину массива на основе размера элемента
         element_size = np.dtype(np.float32).itemsize
         num_elements = len(embedding_bytes) // element_size
         
-        # Проверьте, что размер корректен
         if len(embedding_bytes) % element_size != 0:
             #logging.error(f"Invalid embedding size: {len(embedding_bytes)} bytes")
             continue
@@ -155,7 +197,7 @@ def load_embeddings_from_db(db_connection):
     
     return embeddings
 
-
+#?why do we have it here :D
 def find_best_match(query_embedding, embeddings):
     best_match = None
     highest_similarity = -1
@@ -177,15 +219,14 @@ def generate_response():
     print(data)
     model = data.get("model")
     query = data.get("prompt")
+    category = data.get("category", "any")
     n_ctx = int(data.get("n_ctx",8192))
     delta = int(data.get("delta",30))
     stream = data.get("stream", False)
-
     if not query or not model:
         return jsonify({"error": "Model and prompt are required"}), 400
 
     try:
-        # Создание эмбеддинга для запроса пользователя
         response = requests.post(
             f"{TARGET_HOST}/api/embeddings",
             json={"model": EMBED_MODEL_NAME, "prompt": query, "options": {"num_ctx": 8192}}
@@ -197,12 +238,10 @@ def generate_response():
         else:
             return jsonify({"error": "Failed to create query embedding"}), response.status_code
 
-        # Загрузка эмбеддингов из базы данных
         db_connection = get_db_connection()
-        embeddings = load_embeddings_from_db(db_connection)
+        embeddings = load_embeddings_from_db(db_connection, category)
         db_connection.close()
 
-        # Поиск наиболее подходящего документа
         best_match = ansemble(query_embedding, embeddings)
         file_path = best_match[0] if best_match else None
         doc_id = best_match[1] if best_match else None
@@ -254,7 +293,7 @@ def generate_test_searches():
     data = request.get_json()
     model = data.get("model")
     query = data.get("prompt")
-
+    category = data.get("category", "any")
     if not query or not model:
         return jsonify({"error": "Model and prompt are required"}), 400
 
@@ -273,10 +312,8 @@ def generate_test_searches():
 
         # Загрузка эмбеддингов из базы данных
         db_connection = get_db_connection()
-        embeddings = load_embeddings_from_db(db_connection)
+        embeddings = load_embeddings_from_db(db_connection, category)
         db_connection.close()
-
-
 
         results = {}
 
@@ -297,6 +334,7 @@ def generate_test_searches():
         knn_model = create_knn_model(embeddings, metric="chebyshev")
         best_match_knn = find_best_match_knn(query_embedding, knn_model, embeddings)
         results["knn_chebyshev"] = {"file": best_match_knn[0], "doc_id": best_match_knn[1]}
+
         # kNN
         knn_model = create_knn_model(embeddings, metric="euclidean")
         best_match_knn = find_best_match_knn(query_embedding, knn_model, embeddings)
