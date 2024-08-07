@@ -1,0 +1,6 @@
+{
+  "model0": "mxbai-embed-large:latest",
+  "model1": "all-minilm:latest",
+  "model2": "qwen2:0.5b",
+  "model3": "llama3:8b"
+}

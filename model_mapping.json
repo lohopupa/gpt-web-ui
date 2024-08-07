@@ -1,0 +1,8 @@
+{
+  "model0": "nomic-embed-text:latest",
+  "model1": "llama3.1:8b",
+  "model2": "mxbai-embed-large:latest",
+  "model3": "all-minilm:latest",
+  "model4": "qwen2:0.5b",
+  "model5": "llama3:8b"
+}
