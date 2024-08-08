@@ -155,7 +155,6 @@ def ask_question_for_vector_store(question, vector_store_id, assistant_id):
         print(f"Error during run: {e}")
         return None
 
-
 # class EventHandler(AssistantEventHandler):
 #     @override
 #     def on_text_created(self, text) -> None:
