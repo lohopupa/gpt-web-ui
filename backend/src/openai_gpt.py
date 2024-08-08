@@ -16,7 +16,7 @@ else:
 
 client = OpenAI(api_key=api_key, base_url="http://gpt.lhpa.ru/v1")
 
-MAIN_VECTOR_STORE_NAME = "Document Store"
+MAIN_VECTOR_STORE_NAME = "415 Base"
 
 def get_or_create_vector_store(category):
     vector_stores = client.beta.vector_stores.list()
