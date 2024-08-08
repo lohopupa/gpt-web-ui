@@ -34,8 +34,10 @@ async def startup_event():
 
 @app.post("/api/upload_files")
 async def upload_files(category: str, files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
+    print("STRAT UPLOADING")
     results = []
     for file in files:
+        print("Processing " + file.filename)
         try:
             result = await add_file(file, category, db)
             results.append(result)
@@ -49,9 +51,9 @@ async def upload_files(category: str, files: List[UploadFile] = File(...), db: S
 @app.post("/api/generate")
 async def generate(request: GenerateRequest, db: Session = Depends(get_db)):
     if request.model in ollama.USING_MODELS:
-        return ollama.generate(request, db)
+        return {"response": ollama.generate(request, db), "done": True}
     elif request.model == "openai_chatgpt":
-        return openai_gpt.generate(request)
+        return {"response": openai_gpt.generate(request), "done": True}
     raise HTTPException(status_code=500, detail="NOT IMPLEMENTED")
 
 

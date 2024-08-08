@@ -135,30 +135,21 @@ const appendBotMessage = (text, done) => {
 //     console.error("Request failed:", error);
 //   }
 // };
-// const queryChatGenerate = async () => {
-//   const apiUrl = `/generate`;
-//   const headers = { "Content-Type": "application/json" };
-//   try {
-//     const response = await fetch(apiUrl, {
-//       method: "POST",
-//       body: JSON.stringify({
-//         model: "llama3.1:8b",
-//         prompt: chatHistory[chatHistory.length - 1].content,
-//         stream: false,
-//       }),
-//       headers: headers,
-//     });
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! Status: ${response.status}`);
-//     }
-//     const resp_json = await response.json()
-//     renderNewBotMessage();
-//     appendBotMessage(resp_json["response"], resp_json["done"]);
-//   }
-//   catch (e) {
-//     console.error(e)
-//   }
-// }
+const queryGenerate = () => __awaiter(void 0, void 0, void 0, function* () {
+    const resp = yield queryApi("POST", "generate", undefined, {
+        model: selectedModel,
+        query: chatHistory[chatHistory.length - 1].content,
+        categories: ["test4"],
+    });
+    // model: str
+    // query: str
+    // categories: list[str]
+    // n_ctx: int | None
+    // delta: int | None
+    // use_search: bool | None
+    renderNewBotMessage();
+    appendBotMessage(resp["response"], resp["done"]);
+});
 const addModelName = (model) => {
     const newOption = document.createElement("option");
     newOption.value = model;
@@ -191,17 +182,18 @@ const loadModel = () => {
     messageInput.disabled = true;
     sendButton.disabled = true;
     // queryChat(false).then(() => {
-    //   preloader.style.display = "none";
-    //   messageInput.disabled = false;
-    //   sendButton.disabled = false;
+    preloader.style.display = "none";
+    messageInput.disabled = false;
+    sendButton.disabled = false;
     // });
 };
 const constructPath = (endpoint, args) => {
     if (Array.isArray(endpoint)) {
         endpoint = endpoint.join("/");
     }
-    let path = `${window.location.protocol}//${window.location.host}/api/${endpoint}`;
-    // let path = `http://localhost:8000/api/${endpoint}`;
+    // let path = `${window.location.protocol}//${window.location.host}/api/${endpoint}`;
+    let path = `http://speccy49home.ddns.net:5000/api/${endpoint}`;
+    // let path = `http://5.164.181.30:5000/api/${endpoint}`;
     if (args)
         path +=
             "?" +
@@ -260,20 +252,19 @@ const addCategory = () => {
     sendButton.addEventListener("click", () => {
         console.log("CLICK");
         const message = messageInput.value.trim();
-        // if (!selectedModel) {
-        //   alert("Model was not selected");
-        //   return;
-        // }
+        if (!selectedModel) {
+            alert("Model was not selected");
+            return;
+        }
         if (message) {
             const msg = { role: "user", content: message };
             renderMessage(msg);
             addMessage(msg);
-            // queryChatGenerate();
+            queryGenerate();
         }
         messageInput.value = "";
     });
     addCategotyButton.addEventListener("click", () => {
-        // queryApi("GET", "test").then(console.log)
         addCategory();
     });
     messageInput.addEventListener("keypress", (e) => {
@@ -299,7 +290,10 @@ const addCategory = () => {
             console.log('No files selected.');
             return;
         }
-        queryApi("POST", "upload_files", { category: "test3" }, Array.from(files), {})
+        const category = prompt("New category name");
+        if (!category)
+            return;
+        queryApi("POST", "upload_files", { category: category }, Array.from(files), {})
             .then(console.log)
             .catch(console.error);
     });
