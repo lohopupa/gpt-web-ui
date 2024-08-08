@@ -11,7 +11,8 @@ from sqlalchemy import or_
 
 EMBED_MODEL_NAME = "mxbai-embed-large"
 # OLLAMA_HOST = "http://ollama:11434/api"
-OLLAMA_HOST = "http://speccy49home.ddns.net:11434/api"
+#OLLAMA_HOST = "http://speccy49home.ddns.net:11434/api"
+OLLAMA_HOST = "http://localhost:11434/api"
 USING_MODELS = ["llama3.1:8b"]
 
 def upload_file(filename, file_content, category, db: Session) -> str | None:
