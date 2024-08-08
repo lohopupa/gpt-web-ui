@@ -13,8 +13,8 @@ else:
 
 client = OpenAI(api_key=api_key)
 
-vector_store_name = "Document Store"
-files_directory = './new_files_83'
+category = "Document Store"
+files_directory = './new_files_83' # ?
 
 
 
@@ -22,9 +22,9 @@ files_directory = './new_files_83'
 def get_or_create_vector_store():
     vector_stores = client.beta.vector_stores.list()
     for vs in vector_stores.data:
-        if vs.name == vector_store_name:
+        if vs.name == category:
             return vs
-    new_vector_store = client.beta.vector_stores.create(name=vector_store_name)
+    new_vector_store = client.beta.vector_stores.create(name=category)
     return new_vector_store
 
 def get_uploaded_file_ids():

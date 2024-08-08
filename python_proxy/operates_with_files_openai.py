@@ -1,8 +1,13 @@
 from openai import OpenAI
 import datetime
-
-api_key = 'sk-proj-Y0BMcV94xtbw7yfiXsl9T3BlbkFJhQzRS6gHt1VP8PhGOXB7'
-client = OpenAI(api_key=api_key)
+import os
+if os.getenv('OPENAI_API_KEY'):
+    api_key = os.getenv('OPENAI_API_KEY')
+else:
+    from dotenv import load_dotenv
+    load_dotenv()
+    api_key = os.getenv('OPENAI_API_KEY')
+client = OpenAI(api_key=api_key, base_url="http://gpt.lhpa.ru/v1")
 
 def upload_file():
     filename = input("Enter the filename to upload: ")
@@ -60,14 +65,32 @@ def delete_all_assistants():
     else:
         print("Operation cancelled.")
 
+def list_and_delete_vector_stores():
+    while True:
+        response = client.beta.vector_stores.list()
+        files = list(response.data)
+        if len(files) == 0:
+            print("No files found.")
+            return
+        for i, file in enumerate(files, start=1):
+            created_date = datetime.datetime.utcfromtimestamp(file.created_at).strftime('%Y-%m-%d')
+            print(f"[{i}] {file.name} [{file.id}], Created: {created_date}")
+        choice = input("Enter a file number to delete, or any other input to return to menu: ")
+        if not choice.isdigit() or int(choice) < 1 or int(choice) > len(files):
+            return
+        selected_file = files[int(choice) - 1]
+        client.beta.vector_stores.delete(selected_file.id)
+        print(f"File deleted: {selected_file.name}")
+
 def main():
     while True:
         print("\n== Assistants file utility ==")
         print("[1] Upload file")
         print("[2] List all files")
-        print("[3] List all and delete one of your choice")
+        print("[3] List all files and delete one of your choice")
         print("[4] Delete all assistant files (confirmation required)")
         print("[5] Delete all assistants (confirmation required)")
+        print("[6] List all vector_stores and delete one of your choice")
         print("[9] Exit")
         choice = input("Enter your choice: ")
 
@@ -81,6 +104,8 @@ def main():
             delete_all_files()
         elif choice == "5":
             delete_all_assistants()
+        elif choice == "6":
+            list_and_delete_vector_stores()
         elif choice == "9":
             break
         else:
