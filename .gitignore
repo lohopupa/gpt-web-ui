@@ -3,6 +3,7 @@ tmp/
 tmp2/
 new_files_83/
 venv/
-python_proxy/__pycache__
+__pycache__
 Вопросы.ini
 .env
+.venv/

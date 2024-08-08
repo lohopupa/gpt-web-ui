@@ -1,0 +1,13 @@
+fastapi>=0.68.0,<0.69.0
+pydantic>=1.8.0,<2.0.0
+uvicorn>=0.15.0,<0.16.0
+requests
+langchain==0.0.334
+scikit-learn
+numpy<2
+psycopg2-binary
+PyMupdf
+faiss-cpu==1.7.4
+python-multipart 
+python-docx 
+sqlalchemy
