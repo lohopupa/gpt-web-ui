@@ -119,8 +119,8 @@ def upload_files():
     # if not category:
     #     return jsonify({"error": "No category provided"}), 400
 
-    if not files:
-        return jsonify({"error": "No selected files"}), 400
+    if not (files or isinstance(files, list)):
+        return jsonify({"error": "No selected files or files are not a list"}), 400
 
     all_embeddings = []
     for file in files:
@@ -304,7 +304,7 @@ def generate_test_searches():
     data = request.get_json()
     model = data.get("model")
     query = data.get("prompt")
-    categories = data.get("category", ["any"])
+    categories = data.get("category", [])
     if not query or not model:
         return jsonify({"error": "Model and prompt are required"}), 400
 
