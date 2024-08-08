@@ -1,3 +1,4 @@
+from io import BytesIO
 import pymupdf
 from docx import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -25,7 +26,7 @@ async def extract_text_from_pdf(file) -> str:
     return text
 
 async def extract_text_from_docx(file) -> str:
-    document = Document(file)
+    document = Document(BytesIO(await file.read()))
     text = ""
     for paragraph in document.paragraphs:
         text += clean_text(paragraph.text)

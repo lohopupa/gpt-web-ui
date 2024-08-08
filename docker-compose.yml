@@ -19,17 +19,17 @@ services:
       - ./backend/src:/app/src
     ports:
       - 11432:5000
-    depends_on:
-      - db
-      - ollama
-  db:
-    image: postgres:13
-    env_file:
-      - .env
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    # depends_on:
+    #   - db
+    #   - ollama
+  # db:
+  #   image: postgres:13
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
   proxy:
     image: nginx:1.13-alpine
     ports:
@@ -39,20 +39,20 @@ services:
     depends_on:
       - frontend
       - backend
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - 11434:11434
-    env_file:
-      - .env
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              capabilities: [ gpu ]
-    volumes:
-      - ollama_models:/root/.ollama
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   ports:
+  #     - 11434:11434
+  #   env_file:
+  #     - .env
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             capabilities: [ gpu ]
+  # volumes:
+  #   - ollama_models:/root/.ollama
 
 volumes:
   postgres_data:
