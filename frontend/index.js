@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 var _a;
 const sendButton = document.getElementById("sendButton");
+const addCategotyButton = document.getElementById("loadButton");
 const themeButton = document.getElementById("theme-button");
 const messageInput = document.getElementById("messageInput");
 const chatBox = document.getElementById("chatBox");
@@ -28,10 +29,10 @@ const applyTheme = (theme) => {
 const theme = (_a = localStorage.getItem("theme")) !== null && _a !== void 0 ? _a : "dark";
 applyTheme(theme);
 themeButton.addEventListener("click", () => applyTheme(getNextTheme()));
-const API_PORT = 11433;
-const API_HOST = "5.164.175.65";
-const apiBaseUrl = `http://${API_HOST}:${API_PORT}/api`;
-// const apiBaseUrl = `${window.location.protocol}//${window.location.host.split(":")[0]}:${API_PORT}/api`;
+// const API_PORT = 11433;
+// const API_HOST = "5.164.175.65";
+// const apiBaseUrl = `http://${API_HOST}:${API_PORT}/api`;
+// // const apiBaseUrl = `${window.location.protocol}//${window.location.host.split(":")[0]}:${API_PORT}/api`;
 const chatHistory = [];
 const cleanChatHistory = () => {
     chatHistory.length = 0;
@@ -77,7 +78,7 @@ const appendBotMessage = (text, done) => {
 };
 const queryChat = (useOutput) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
-    const apiUrl = `${apiBaseUrl}/chat`;
+    const apiUrl = `/chat`;
     const headers = { "Content-Type": "application/json" };
     try {
         const response = yield fetch(apiUrl, {
@@ -142,7 +143,7 @@ const queryChat = (useOutput) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 const queryChatGenerate = () => __awaiter(void 0, void 0, void 0, function* () {
-    const apiUrl = `${apiBaseUrl}/generate`;
+    const apiUrl = `/generate`;
     const headers = { "Content-Type": "application/json" };
     try {
         const response = yield fetch(apiUrl, {
@@ -173,7 +174,7 @@ const addModelName = (model) => {
 };
 const loadModels = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const resp = yield fetch(`${apiBaseUrl}/tags`, {
+        const resp = yield fetch(`/tags`, {
             headers: { "Content-Type": "application/json" },
         });
         const resp_json = yield resp.json();
@@ -197,6 +198,7 @@ const loadModel = () => {
 };
 (() => {
     sendButton.addEventListener("click", () => {
+        console.log("CLICK");
         const message = messageInput.value.trim();
         // if (!selectedModel) {
         //   alert("Model was not selected");
@@ -209,6 +211,10 @@ const loadModel = () => {
             queryChatGenerate();
         }
         messageInput.value = "";
+    });
+    addCategotyButton.addEventListener("click", () => {
+        console.log("AAAAA");
+        queryApi("GET", "test").then(console.log);
     });
     messageInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
@@ -225,3 +231,52 @@ const loadModel = () => {
     loadModels();
     cleanChatHistory();
 })();
+const constructPath = (endpoint, args) => {
+    if (Array.isArray(endpoint)) {
+        endpoint = endpoint.join("/");
+    }
+    let path = `${window.location.protocol}//${window.location.host}/api/${endpoint}`;
+    // let path = `http://localhost:8000/api/${endpoint}`;
+    if (args)
+        path +=
+            "?" +
+                Object.entries(args)
+                    .filter(([k, v]) => v != undefined)
+                    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+                    .join("&");
+    return path;
+};
+const alertError = (message) => {
+    return (e) => {
+        e = e;
+        const cause = e.cause ? e.cause["detail"] : null;
+        alert(message + " " + cause);
+    };
+};
+const queryApi = (method, endpoint, parameters, body, headers) => __awaiter(void 0, void 0, void 0, function* () {
+    const path = constructPath(endpoint, parameters);
+    const init = {
+        method: method,
+        headers: headers !== null && headers !== void 0 ? headers : {
+            accept: "application/json",
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "true",
+        },
+    };
+    if (["POST", "PUT", "PATCH"].includes(method) && body) {
+        if (body instanceof File) {
+            const formData = new FormData();
+            formData.append("file", body);
+            init.body = formData;
+        }
+        else {
+            init.body = JSON.stringify(body);
+        }
+    }
+    const response = yield fetch(path, init);
+    if (!response.ok) {
+        throw new Error(response.statusText, { cause: yield response.json() });
+    }
+    return yield response.json();
+});
+//# sourceMappingURL=index.js.map

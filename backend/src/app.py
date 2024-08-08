@@ -48,6 +48,11 @@ async def list_models():
     return ollama.USING_MODELS # + gpt
 
 
+@app.get("/api/test")
+async def test():
+    return {"result": "HELLO WORLD"}
+
+
 @app.get("/api/categories")
 async def list_categories():
     pass

@@ -1,4 +1,5 @@
 const sendButton = document.getElementById("sendButton") as HTMLButtonElement;
+const addCategotyButton = document.getElementById("loadButton") as HTMLButtonElement;
 const themeButton = document.getElementById(
   "theme-button"
 ) as HTMLButtonElement;
@@ -29,10 +30,10 @@ type Role = "system" | "user" | "assistant";
 type Message = { role: Role; content: string };
 type ChatHistory = Message[];
 
-const API_PORT = 11433;
-const API_HOST = "5.164.175.65";
-const apiBaseUrl = `http://${API_HOST}:${API_PORT}/api`;
-// const apiBaseUrl = `${window.location.protocol}//${window.location.host.split(":")[0]}:${API_PORT}/api`;
+// const API_PORT = 11433;
+// const API_HOST = "5.164.175.65";
+// const apiBaseUrl = `http://${API_HOST}:${API_PORT}/api`;
+// // const apiBaseUrl = `${window.location.protocol}//${window.location.host.split(":")[0]}:${API_PORT}/api`;
 
 const chatHistory: ChatHistory = [];
 
@@ -89,7 +90,7 @@ const appendBotMessage = (text: string, done: boolean) => {
 };
 
 const queryChat = async (useOutput: boolean) => {
-  const apiUrl = `${apiBaseUrl}/chat`;
+  const apiUrl = `/chat`;
   const headers = { "Content-Type": "application/json" };
 
   try {
@@ -158,7 +159,7 @@ const queryChat = async (useOutput: boolean) => {
 
 
 const queryChatGenerate = async () => {
-  const apiUrl = `${apiBaseUrl}/generate`;
+  const apiUrl = `/generate`;
   const headers = { "Content-Type": "application/json" };
 
   try {
@@ -194,7 +195,7 @@ const addModelName = (model: string) => {
 
 const loadModels = async () => {
   try {
-    const resp = await fetch(`${apiBaseUrl}/tags`, {
+    const resp = await fetch(`/tags`, {
       headers: { "Content-Type": "application/json" },
     });
     const resp_json = await resp.json();
@@ -220,6 +221,7 @@ const loadModel = () => {
 
 (() => {
   sendButton.addEventListener("click", () => {
+    console.log("CLICK")
     const message = messageInput.value.trim();
     // if (!selectedModel) {
     //   alert("Model was not selected");
@@ -234,6 +236,11 @@ const loadModel = () => {
 
     messageInput.value = "";
   });
+
+  addCategotyButton.addEventListener("click", () => {
+    console.log("AAAAA")
+    queryApi("GET", "test").then(console.log)
+  })
 
   messageInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
@@ -252,3 +259,66 @@ const loadModel = () => {
   loadModels();
   cleanChatHistory();
 })();
+
+
+type QueryMethod = "GET" | "POST" | "DELETE" | "PUT" | "PATCH";
+type BasicTypes = string | number | boolean | null
+
+type Prms = {
+  [key: string]: BasicTypes
+}
+
+const constructPath = (
+  endpoint: string | string[],
+  args?: Prms
+) => {
+  if (Array.isArray(endpoint)) {
+    endpoint = endpoint.join("/")
+  }
+  let path = `${window.location.protocol}//${window.location.host}/api/${endpoint}`;
+  // let path = `http://localhost:8000/api/${endpoint}`;
+
+  if (args)
+    path +=
+      "?" +
+      Object.entries(args)
+        .filter(([k, v]) => v != undefined)
+        .map(([k, v]) => `${k}=${encodeURIComponent(v!)}`)
+        .join("&");
+  return path;
+};
+
+const alertError = (message: string) => {
+  return (e: any) => {
+    e = e as Error
+    const cause = e.cause ? (e.cause as { detail: string })["detail"] : null
+    alert(message + " " + cause)
+  }
+}
+
+
+const queryApi = async (method: QueryMethod, endpoint: string | string[], parameters?: Prms, body?: {} | File, headers?: HeadersInit) => {
+  const path = constructPath(endpoint, parameters);
+  const init: RequestInit = {
+    method: method,
+    headers: headers ?? {
+      accept: "application/json",
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "true",
+    },
+  };
+  if (["POST", "PUT", "PATCH"].includes(method) && body) {
+    if (body instanceof File) {
+      const formData = new FormData()
+      formData.append("file", body)
+      init.body = formData;
+    } else {
+      init.body = JSON.stringify(body);
+    }
+  }
+  const response = await fetch(path, init);
+  if (!response.ok) {
+    throw new Error(response.statusText, { cause: await response.json() });
+  }
+  return await response.json()
+}

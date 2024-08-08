@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "target": "ES6",
+        "lib": ["ES2022", "dom"],
+        "module": "none",
+        // "moduleResolution": "node",
+        "strict": true,
+        "esModuleInterop": true,
+        // "forceConsistentCasingInFileNames": true,
+        "sourceMap": true,
+        "noEmitOnError": true
+    },
+    "exclude": [
+        "node_modules",
+        "**/*.spec.ts"
+    ]
+}
