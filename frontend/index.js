@@ -104,11 +104,12 @@ const appendBotMessage = (text, done) => {
     messageBox.id = "";
   }
 };
-const queryGenerate = () => __awaiter(void 0, void 0, void 0, function* () {
+const queryGenerate = () =>
+  __awaiter(void 0, void 0, void 0, function* () {
     const resp = yield queryApi("POST", "generate", undefined, {
-        model: selectedModel,
-        query: chatHistory[chatHistory.length - 1].content,
-        categories: selectedCategories,
+      model: selectedModel,
+      query: chatHistory[chatHistory.length - 1].content,
+      categories: selectedCategories,
     });
     renderNewBotMessage();
     appendBotMessage(resp["response"], resp["done"]);
@@ -125,31 +126,30 @@ const loadModels = () =>
     models.forEach(addModelName);
   });
 const addCategoryLable = (category) => {
-    const catLabel = document.createElement("label");
-    catLabel.className = "toggle-container";
-    const chekBox = document.createElement("input");
-    chekBox.type = "checkbox";
-    chekBox.addEventListener("change", (event) => {
-        const target = event.target;
-        if (target.checked) {
-            if (!selectedCategories.includes(category)) {
-                selectedCategories.push(category);
-            }
-        }
-        else {
-            const index = selectedCategories.indexOf(category);
-            if (index !== -1) {
-                selectedCategories.splice(index, 1);
-            }
-        }
-    });
-    // TODO: Add id
-    const span = document.createElement("span");
-    span.className = "toggle-label";
-    span.innerHTML = category;
-    catLabel.appendChild(chekBox);
-    catLabel.appendChild(span);
-    categorySelector.appendChild(catLabel);
+  const catLabel = document.createElement("label");
+  catLabel.className = "toggle-container";
+  const chekBox = document.createElement("input");
+  chekBox.type = "checkbox";
+  chekBox.addEventListener("change", (event) => {
+    const target = event.target;
+    if (target.checked) {
+      if (!selectedCategories.includes(category)) {
+        selectedCategories.push(category);
+      }
+    } else {
+      const index = selectedCategories.indexOf(category);
+      if (index !== -1) {
+        selectedCategories.splice(index, 1);
+      }
+    }
+  });
+  // TODO: Add id
+  const span = document.createElement("span");
+  span.className = "toggle-label";
+  span.innerHTML = category;
+  catLabel.appendChild(chekBox);
+  catLabel.appendChild(span);
+  categorySelector.appendChild(catLabel);
 };
 const loadCategories = () =>
   __awaiter(void 0, void 0, void 0, function* () {
@@ -168,20 +168,20 @@ const loadModel = () => {
   // });
 };
 const constructPath = (endpoint, args) => {
-    if (Array.isArray(endpoint)) {
-        endpoint = endpoint.join("/");
-    }
-    let path = `${window.location.protocol}//${window.location.host}/api/${endpoint}`;
-    // let path = `http://speccy49home.ddns.net:5000/api/${endpoint}`;
-    // let path = `http://5.164.181.30:5000/api/${endpoint}`;
-    if (args)
-        path +=
-            "?" +
-                Object.entries(args)
-                    .filter(([k, v]) => v != undefined)
-                    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
-                    .join("&");
-    return path;
+  if (Array.isArray(endpoint)) {
+    endpoint = endpoint.join("/");
+  }
+  let path = `${window.location.protocol}//${window.location.host}/api/${endpoint}`;
+  // let path = `http://speccy49home.ddns.net:5000/api/${endpoint}`;
+  // let path = `http://5.164.181.30:5000/api/${endpoint}`;
+  if (args)
+    path +=
+      "?" +
+      Object.entries(args)
+        .filter(([k, v]) => v != undefined)
+        .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+        .join("&");
+  return path;
 };
 const alertError = (message) => {
   return (e) => {
@@ -234,60 +234,33 @@ const addCategory = () => {
   loadFilesElement.click();
 };
 (() => {
-    sendButton.addEventListener("click", () => {
-        console.log("CLICK");
-        const message = messageInput.value.trim();
-        if (!selectedModel) {
-            alert("Model was not selected");
-            return;
-        }
-        if (message) {
-            const msg = { role: "user", content: message };
-            renderMessage(msg);
-            addMessage(msg);
-            queryGenerate();
-        }
-        messageInput.value = "";
-    });
-    addCategotyButton.addEventListener("click", () => {
-        addCategory();
-    });
-    messageInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-            sendButton.click();
-        }
-    });
-    modelsSelector.addEventListener("change", (e) => {
-        const target = e.target;
-        selectedModel = target.value;
-        loadModel();
-        cleanChatHistory();
-        chatBox.innerHTML = "";
-    });
-    loadFilesElement.addEventListener("change", (e) => {
-        const target = e.target;
-        const files = target.files;
-        if (!files) {
-            console.log('No files selected.');
-            return;
-        }
-        if (files.length === 0) {
-            console.log('No files selected.');
-            return;
-        }
-        const category = prompt("New category name");
-        if (!category)
-            return;
-        queryApi("POST", "upload_files", { category: category }, Array.from(files), {})
-            .then(() => {
-            alert("DONE!");
-            loadCategories();
-            loadFilesElement.innerHTML = "";
-        })
-            .catch(console.error);
-    });
-    loadCategories();
-    loadModels();
+  sendButton.addEventListener("click", () => {
+    console.log("CLICK");
+    const message = messageInput.value.trim();
+    if (!selectedModel) {
+      alert("Model was not selected");
+      return;
+    }
+    if (message) {
+      const msg = { role: "user", content: message };
+      renderMessage(msg);
+      addMessage(msg);
+      queryGenerate();
+    }
+    messageInput.value = "";
+  });
+  addCategotyButton.addEventListener("click", () => {
+    addCategory();
+  });
+  messageInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      sendButton.click();
+    }
+  });
+  modelsSelector.addEventListener("change", (e) => {
+    const target = e.target;
+    selectedModel = target.value;
+    loadModel();
     cleanChatHistory();
     chatBox.innerHTML = "";
   });
@@ -311,7 +284,11 @@ const addCategory = () => {
       Array.from(files),
       {}
     )
-      .then(console.log)
+      .then(() => {
+        alert("DONE!");
+        loadCategories();
+        loadFilesElement.innerHTML = "";
+      })
       .catch(console.error);
   });
   loadCategories();
