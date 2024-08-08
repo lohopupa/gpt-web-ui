@@ -3,7 +3,8 @@ from openai import OpenAI, AssistantEventHandler
 from typing_extensions import override
 import time
 
-# Установите ваш API ключ
+
+
 api_key = 'hui'
 client = OpenAI(api_key=api_key)
 

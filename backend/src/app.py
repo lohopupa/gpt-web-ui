@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Request, File, UploadFile, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from files_processing import exctract_text_from_file
-from mdoels import add_file, query_model
+from backend.src.models import add_file, query_model
 from database import create_embeddings_table, get_db
 from ollama import load_models
 import ollama
