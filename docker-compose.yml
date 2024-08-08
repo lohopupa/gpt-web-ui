@@ -10,6 +10,8 @@ services:
       - backend
   backend:
     build: backend
+    environment:
+      - PYTHONUNBUFFERED=1
     env_file:
       - .env
     volumes:

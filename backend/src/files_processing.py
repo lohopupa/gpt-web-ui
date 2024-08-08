@@ -21,6 +21,7 @@ async def extract_text_from_pdf(file) -> str:
     for page_num in range(document.page_count):
         page = document.load_page(page_num)
         text += clean_text(page.get_text())
+    await file.seek(0)
     return text
 
 async def extract_text_from_docx(file) -> str:
@@ -28,6 +29,7 @@ async def extract_text_from_docx(file) -> str:
     text = ""
     for paragraph in document.paragraphs:
         text += clean_text(paragraph.text)
+    await file.seek(0)
     return text
 
 

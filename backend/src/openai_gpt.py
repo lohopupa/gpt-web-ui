@@ -33,15 +33,18 @@ async def upload_file(file: UploadFile, category) -> str:
     main_vector_store = get_or_create_vector_store(MAIN_VECTOR_STORE_NAME)
 
     try:
-        fp = os.path.join("/tmp", file.filename)
-        with open(fp, "wb") as f:
-            f.write(await file.read())
+        # fp = os.path.join("/tmp", file.filename)
+        # with open(fp, "wb") as f:
+        #     content = await file.read()
+        #     f.write(content)
         
-        # file_content = await file.read()
-        # buffer = io.BytesIO(file_content)
-        # buffer.name = file.filename
+        # file_stream = [open(fp, "rb")]
+        file_content = await file.read()
+        buffer = io.BytesIO(file_content)
+        buffer.name = file.filename
     
-        file_stream = [open(fp, "rb")]
+        file_stream = [buffer]
+        
         
         # Загрузка файла в категорийный vector_store
         file_batch = client.beta.vector_stores.file_batches.upload_and_poll(

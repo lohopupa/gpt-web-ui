@@ -26,17 +26,6 @@ async def startup_event():
 
 @app.post("/api/upload_files")
 async def upload_files(category: str, files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
-    save_directory = Path(f"/tmp/{category}")
-    save_directory.mkdir(parents=True, exist_ok=True)
-
-    saved_files = []
-    for file in files:
-        file_path = save_directory / file.filename
-        with file_path.open("wb") as f:
-            content = await file.read()
-            f.write(content)
-        saved_files.append(str(file_path))
-    return "Done!"
     results = []
     for file in files:
         try:
