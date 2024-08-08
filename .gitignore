@@ -7,3 +7,4 @@ __pycache__
 Вопросы.ini
 .env
 .venv/
+.vscode/

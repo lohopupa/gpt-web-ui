@@ -9,6 +9,8 @@ import ollama
 import logging
 from app_types import *
 import database
+from typing import List
+
 
 app = FastAPI()
 log = logging.Logger(name="ollama", level=10).info
@@ -20,13 +22,18 @@ async def startup_event():
     
 
 @app.post("/api/upload_file")
-async def upload_file(category: str, file: UploadFile = File(...), db: Session = Depends(get_db)):
-    filename = file.filename
-    try:
-        text = await exctract_text_from_file(file)
-        return add_file(filename, text, category, db)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+async def upload_file(category: str, files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
+    results = []
+    for file in files:
+        filename = file.filename
+        try:
+            text = await exctract_text_from_file(file)
+            result = add_file(filename, text, category, db)
+            results.append(result)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to process file {filename}: {str(e)}")
+    
+    return {"results": results}
 
 
 @app.post("/api/generate")

@@ -4,8 +4,13 @@ from typing_extensions import override
 import time
 
 
+if os.getenv('OPENAI_API_KEY'):
+    api_key = os.getenv('OPENAI_API_KEY')
+else:
+    from dotenv import load_dotenv
+    load_dotenv()
+    api_key = os.getenv('OPENAI_API_KEY')
 
-api_key = 'hui'
 client = OpenAI(api_key=api_key)
 
 vector_store_name = "Document Store"
