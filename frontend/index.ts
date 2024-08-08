@@ -12,6 +12,8 @@ const categorySelector = document.getElementById("category-select") as HTMLDivEl
 const preloader = document.getElementById("preloader") as HTMLDivElement;
 const loadFilesElement = document.getElementById("load-files") as HTMLInputElement;
 
+const selectedCategories: string[] = []
+
 const getNextTheme = () => {
   const theme = localStorage.getItem("theme") ?? "light";
   return theme == "dark" ? "light" : "dark";
@@ -87,74 +89,6 @@ const appendBotMessage = (text: string, done: boolean) => {
   }
 };
 
-// const queryChat = async (useOutput: boolean) => {
-//   const apiUrl = `/chat`;
-//   const headers = { "Content-Type": "application/json" };
-
-//   try {
-//     const response = await fetch(apiUrl, {
-//       method: "POST",
-//       body: JSON.stringify({
-//         model: selectedModel,
-//         messages: chatHistory,
-//         stream: true,
-//       }),
-//       headers: headers,
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! Status: ${response.status}`);
-//     }
-//     if (!useOutput) return;
-
-//     renderNewBotMessage();
-
-//     const reader = response.body?.getReader();
-//     const decoder = new TextDecoder();
-//     let buffer = "";
-
-//     if (reader) {
-//       while (true) {
-//         const { done, value } = await reader.read();
-//         if (done) {
-//           break;
-//         }
-//         buffer += decoder.decode(value, { stream: true });
-//         let lineEnd;
-//         while ((lineEnd = buffer.indexOf("\n")) >= 0) {
-//           const line = buffer.substring(0, lineEnd).trim();
-//           buffer = buffer.substring(lineEnd + 1);
-//           try {
-//             const data = JSON.parse(line);
-//             if (data.message != undefined) {
-//               appendBotMessage(data.message.content, data.done ?? false);
-//             }
-//             if (data.done) {
-//               console.log("Complete response received.");
-//               return;
-//             }
-//           } catch (error) {
-//             console.error("Error decoding JSON:", error);
-//           }
-//         }
-//       }
-//     }
-
-//     if (buffer.length > 0) {
-//       try {
-//         const data = JSON.parse(buffer);
-//         if (data.response) {
-//           appendBotMessage(data.message.content, data.done ?? false);
-//         }
-//       } catch (error) {
-//         console.error("Error decoding JSON:", buffer, error);
-//       }
-//     }
-//   } catch (error) {
-//     console.error("Request failed:", error);
-//   }
-// };
-
 
 const queryGenerate = async () => {
   const resp = await queryApi(
@@ -164,16 +98,10 @@ const queryGenerate = async () => {
     {
       model: selectedModel,
       query: chatHistory[chatHistory.length - 1].content,
-      categories: ["test4"],
+      categories: selectedCategories,
 
     })
 
-    // model: str
-    // query: str
-    // categories: list[str]
-    // n_ctx: int | None
-    // delta: int | None
-    // use_search: bool | None
   renderNewBotMessage();
   appendBotMessage(resp["response"], resp["done"]);
 }
@@ -195,6 +123,19 @@ const addCategoryLable = (category: string) => {
   catLabel.className = "toggle-container"
   const chekBox = document.createElement("input");
   chekBox.type = "checkbox"
+  chekBox.addEventListener("change", (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.checked) {
+      if (!selectedCategories.includes(category)) {
+        selectedCategories.push(category);
+      }
+    } else {
+      const index = selectedCategories.indexOf(category);
+      if (index !== -1) {
+        selectedCategories.splice(index, 1);
+      }
+    }
+  });
   // TODO: Add id
   const span = document.createElement("span");
   span.className = "toggle-label"
@@ -206,6 +147,7 @@ const addCategoryLable = (category: string) => {
 
 const loadCategories = async () => {
   const cats = await queryApi("GET", "categories") as string[]
+  categorySelector.innerHTML = ""
   cats.forEach(addCategoryLable)
 }
 
@@ -215,9 +157,9 @@ const loadModel = () => {
   sendButton.disabled = true;
 
   // queryChat(false).then(() => {
-    preloader.style.display = "none";
-    messageInput.disabled = false;
-    sendButton.disabled = false;
+  preloader.style.display = "none";
+  messageInput.disabled = false;
+  sendButton.disabled = false;
   // });
 };
 
@@ -236,8 +178,8 @@ const constructPath = (
   if (Array.isArray(endpoint)) {
     endpoint = endpoint.join("/")
   }
-  // let path = `${window.location.protocol}//${window.location.host}/api/${endpoint}`;
-  let path = `http://speccy49home.ddns.net:5000/api/${endpoint}`;
+  let path = `${window.location.protocol}//${window.location.host}/api/${endpoint}`;
+  // let path = `http://speccy49home.ddns.net:5000/api/${endpoint}`;
   // let path = `http://5.164.181.30:5000/api/${endpoint}`;
 
   if (args)
@@ -348,7 +290,11 @@ const addCategory = () => {
     const category = prompt("New category name")
     if (!category) return
     queryApi("POST", "upload_files", { category: category }, Array.from(files), {})
-      .then(console.log)
+      .then(() => {
+        alert("DONE!")
+        loadCategories()
+        loadFilesElement.innerHTML = ""
+      })
       .catch(console.error)
   })
 

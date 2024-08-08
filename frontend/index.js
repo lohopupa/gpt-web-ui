@@ -18,6 +18,7 @@ const modelsSelector = document.getElementById("model-select");
 const categorySelector = document.getElementById("category-select");
 const preloader = document.getElementById("preloader");
 const loadFilesElement = document.getElementById("load-files");
+const selectedCategories = [];
 const getNextTheme = () => {
     var _a;
     const theme = (_a = localStorage.getItem("theme")) !== null && _a !== void 0 ? _a : "light";
@@ -74,79 +75,12 @@ const appendBotMessage = (text, done) => {
         messageBox.id = "";
     }
 };
-// const queryChat = async (useOutput: boolean) => {
-//   const apiUrl = `/chat`;
-//   const headers = { "Content-Type": "application/json" };
-//   try {
-//     const response = await fetch(apiUrl, {
-//       method: "POST",
-//       body: JSON.stringify({
-//         model: selectedModel,
-//         messages: chatHistory,
-//         stream: true,
-//       }),
-//       headers: headers,
-//     });
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! Status: ${response.status}`);
-//     }
-//     if (!useOutput) return;
-//     renderNewBotMessage();
-//     const reader = response.body?.getReader();
-//     const decoder = new TextDecoder();
-//     let buffer = "";
-//     if (reader) {
-//       while (true) {
-//         const { done, value } = await reader.read();
-//         if (done) {
-//           break;
-//         }
-//         buffer += decoder.decode(value, { stream: true });
-//         let lineEnd;
-//         while ((lineEnd = buffer.indexOf("\n")) >= 0) {
-//           const line = buffer.substring(0, lineEnd).trim();
-//           buffer = buffer.substring(lineEnd + 1);
-//           try {
-//             const data = JSON.parse(line);
-//             if (data.message != undefined) {
-//               appendBotMessage(data.message.content, data.done ?? false);
-//             }
-//             if (data.done) {
-//               console.log("Complete response received.");
-//               return;
-//             }
-//           } catch (error) {
-//             console.error("Error decoding JSON:", error);
-//           }
-//         }
-//       }
-//     }
-//     if (buffer.length > 0) {
-//       try {
-//         const data = JSON.parse(buffer);
-//         if (data.response) {
-//           appendBotMessage(data.message.content, data.done ?? false);
-//         }
-//       } catch (error) {
-//         console.error("Error decoding JSON:", buffer, error);
-//       }
-//     }
-//   } catch (error) {
-//     console.error("Request failed:", error);
-//   }
-// };
 const queryGenerate = () => __awaiter(void 0, void 0, void 0, function* () {
     const resp = yield queryApi("POST", "generate", undefined, {
         model: selectedModel,
         query: chatHistory[chatHistory.length - 1].content,
-        categories: ["test4"],
+        categories: selectedCategories,
     });
-    // model: str
-    // query: str
-    // categories: list[str]
-    // n_ctx: int | None
-    // delta: int | None
-    // use_search: bool | None
     renderNewBotMessage();
     appendBotMessage(resp["response"], resp["done"]);
 });
@@ -165,6 +99,20 @@ const addCategoryLable = (category) => {
     catLabel.className = "toggle-container";
     const chekBox = document.createElement("input");
     chekBox.type = "checkbox";
+    chekBox.addEventListener("change", (event) => {
+        const target = event.target;
+        if (target.checked) {
+            if (!selectedCategories.includes(category)) {
+                selectedCategories.push(category);
+            }
+        }
+        else {
+            const index = selectedCategories.indexOf(category);
+            if (index !== -1) {
+                selectedCategories.splice(index, 1);
+            }
+        }
+    });
     // TODO: Add id
     const span = document.createElement("span");
     span.className = "toggle-label";
@@ -175,6 +123,7 @@ const addCategoryLable = (category) => {
 };
 const loadCategories = () => __awaiter(void 0, void 0, void 0, function* () {
     const cats = yield queryApi("GET", "categories");
+    categorySelector.innerHTML = "";
     cats.forEach(addCategoryLable);
 });
 const loadModel = () => {
@@ -191,8 +140,8 @@ const constructPath = (endpoint, args) => {
     if (Array.isArray(endpoint)) {
         endpoint = endpoint.join("/");
     }
-    // let path = `${window.location.protocol}//${window.location.host}/api/${endpoint}`;
-    let path = `http://speccy49home.ddns.net:5000/api/${endpoint}`;
+    let path = `${window.location.protocol}//${window.location.host}/api/${endpoint}`;
+    // let path = `http://speccy49home.ddns.net:5000/api/${endpoint}`;
     // let path = `http://5.164.181.30:5000/api/${endpoint}`;
     if (args)
         path +=
@@ -294,7 +243,11 @@ const addCategory = () => {
         if (!category)
             return;
         queryApi("POST", "upload_files", { category: category }, Array.from(files), {})
-            .then(console.log)
+            .then(() => {
+            alert("DONE!");
+            loadCategories();
+            loadFilesElement.innerHTML = "";
+        })
             .catch(console.error);
     });
     loadCategories();
