@@ -11,6 +11,7 @@
     --button-hover-background: #0056b3;
     --user-message-background: #e1ffc7;
     --assistant-message-background: #f1f1f1;
+    --toggle-text-color: #444444;
 }
 
 /* Dark theme variables */
@@ -26,6 +27,7 @@ body.dark-theme {
     --button-hover-background: #333;
     --user-message-background: #4a8c4a;
     --assistant-message-background: #555;
+    --toggle-text-color: #b3b3b3;
 }
 
 body {
@@ -95,6 +97,9 @@ body {
 .toggle-label {
     margin-left: 10px;
     font-size: 14px;
+    /* background-color: red; */
+    color: var(--toggle-text-color);
+    font-size: medium;
 }
 
 .chat-container {
@@ -125,7 +130,7 @@ body {
 }
 
 .model-selector {
-    display: none;
+    display: inline-block;
     align-items: center;
 }
 
@@ -193,6 +198,10 @@ body {
 .message.assistant {
     background: var(--assistant-message-background);
     align-self: flex-start;
+}
+
+.file-load-element {
+    display: none;
 }
 
 .preloader {

@@ -13,19 +13,8 @@
     <div class="main-container">
         <div class="side-panel">
             <button id="loadButton" class="load-button">Add category</button>
-            <div class="toggle-boxes">
-                <label class="toggle-container">
-                    <input type="checkbox" id="toggle1">
-                    <span class="toggle-label">Option 1</span>
-                </label>
-                <label class="toggle-container">
-                    <input type="checkbox" id="toggle2">
-                    <span class="toggle-label">Option 2</span>
-                </label>
-                <label class="toggle-container">
-                    <input type="checkbox" id="toggle3">
-                    <span class="toggle-label">Option 3</span>
-                </label>
+            <div class="toggle-boxes" id="category-select">
+                <!-- Categories will appear here -->
             </div>
         </div>
         <div class="chat-container">
@@ -47,6 +36,7 @@
             </div>
         </div>
     </div>
+    <input type="file" class="file-load-element" id="load-files" multiple>
     <script src="index.js"></script>
 </body>
 

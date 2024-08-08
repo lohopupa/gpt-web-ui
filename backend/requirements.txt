@@ -11,3 +11,5 @@ faiss-cpu==1.7.4
 python-multipart 
 python-docx 
 sqlalchemy
+openai
+# dotenv

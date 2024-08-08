@@ -7,8 +7,10 @@ const messageInput = document.getElementById(
   "messageInput"
 ) as HTMLInputElement;
 const chatBox = document.getElementById("chatBox") as HTMLDivElement;
-const selector = document.getElementById("model-select") as HTMLSelectElement;
+const modelsSelector = document.getElementById("model-select") as HTMLSelectElement;
+const categorySelector = document.getElementById("category-select") as HTMLDivElement;
 const preloader = document.getElementById("preloader") as HTMLDivElement;
+const loadFilesElement = document.getElementById("load-files") as HTMLInputElement;
 
 const getNextTheme = () => {
   const theme = localStorage.getItem("theme") ?? "light";
@@ -30,10 +32,6 @@ type Role = "system" | "user" | "assistant";
 type Message = { role: Role; content: string };
 type ChatHistory = Message[];
 
-// const API_PORT = 11433;
-// const API_HOST = "5.164.175.65";
-// const apiBaseUrl = `http://${API_HOST}:${API_PORT}/api`;
-// // const apiBaseUrl = `${window.location.protocol}//${window.location.host.split(":")[0]}:${API_PORT}/api`;
 
 const chatHistory: ChatHistory = [];
 
@@ -89,176 +87,145 @@ const appendBotMessage = (text: string, done: boolean) => {
   }
 };
 
-const queryChat = async (useOutput: boolean) => {
-  const apiUrl = `/chat`;
-  const headers = { "Content-Type": "application/json" };
+// const queryChat = async (useOutput: boolean) => {
+//   const apiUrl = `/chat`;
+//   const headers = { "Content-Type": "application/json" };
 
-  try {
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      body: JSON.stringify({
-        model: selectedModel,
-        messages: chatHistory,
-        stream: true,
-      }),
-      headers: headers,
-    });
+//   try {
+//     const response = await fetch(apiUrl, {
+//       method: "POST",
+//       body: JSON.stringify({
+//         model: selectedModel,
+//         messages: chatHistory,
+//         stream: true,
+//       }),
+//       headers: headers,
+//     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    if (!useOutput) return;
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! Status: ${response.status}`);
+//     }
+//     if (!useOutput) return;
 
-    renderNewBotMessage();
+//     renderNewBotMessage();
 
-    const reader = response.body?.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
+//     const reader = response.body?.getReader();
+//     const decoder = new TextDecoder();
+//     let buffer = "";
 
-    if (reader) {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          break;
-        }
-        buffer += decoder.decode(value, { stream: true });
-        let lineEnd;
-        while ((lineEnd = buffer.indexOf("\n")) >= 0) {
-          const line = buffer.substring(0, lineEnd).trim();
-          buffer = buffer.substring(lineEnd + 1);
-          try {
-            const data = JSON.parse(line);
-            if (data.message != undefined) {
-              appendBotMessage(data.message.content, data.done ?? false);
-            }
-            if (data.done) {
-              console.log("Complete response received.");
-              return;
-            }
-          } catch (error) {
-            console.error("Error decoding JSON:", error);
-          }
-        }
-      }
-    }
+//     if (reader) {
+//       while (true) {
+//         const { done, value } = await reader.read();
+//         if (done) {
+//           break;
+//         }
+//         buffer += decoder.decode(value, { stream: true });
+//         let lineEnd;
+//         while ((lineEnd = buffer.indexOf("\n")) >= 0) {
+//           const line = buffer.substring(0, lineEnd).trim();
+//           buffer = buffer.substring(lineEnd + 1);
+//           try {
+//             const data = JSON.parse(line);
+//             if (data.message != undefined) {
+//               appendBotMessage(data.message.content, data.done ?? false);
+//             }
+//             if (data.done) {
+//               console.log("Complete response received.");
+//               return;
+//             }
+//           } catch (error) {
+//             console.error("Error decoding JSON:", error);
+//           }
+//         }
+//       }
+//     }
 
-    if (buffer.length > 0) {
-      try {
-        const data = JSON.parse(buffer);
-        if (data.response) {
-          appendBotMessage(data.message.content, data.done ?? false);
-        }
-      } catch (error) {
-        console.error("Error decoding JSON:", buffer, error);
-      }
-    }
-  } catch (error) {
-    console.error("Request failed:", error);
-  }
-};
+//     if (buffer.length > 0) {
+//       try {
+//         const data = JSON.parse(buffer);
+//         if (data.response) {
+//           appendBotMessage(data.message.content, data.done ?? false);
+//         }
+//       } catch (error) {
+//         console.error("Error decoding JSON:", buffer, error);
+//       }
+//     }
+//   } catch (error) {
+//     console.error("Request failed:", error);
+//   }
+// };
 
 
-const queryChatGenerate = async () => {
-  const apiUrl = `/generate`;
-  const headers = { "Content-Type": "application/json" };
+// const queryChatGenerate = async () => {
+//   const apiUrl = `/generate`;
+//   const headers = { "Content-Type": "application/json" };
 
-  try {
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      body: JSON.stringify({
-        model: "llama3.1:8b",
-        prompt: chatHistory[chatHistory.length - 1].content,
-        stream: false,
-      }),
-      headers: headers,
-    });
+//   try {
+//     const response = await fetch(apiUrl, {
+//       method: "POST",
+//       body: JSON.stringify({
+//         model: "llama3.1:8b",
+//         prompt: chatHistory[chatHistory.length - 1].content,
+//         stream: false,
+//       }),
+//       headers: headers,
+//     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    const resp_json = await response.json()
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! Status: ${response.status}`);
+//     }
+//     const resp_json = await response.json()
 
-    renderNewBotMessage();
-    appendBotMessage(resp_json["response"], resp_json["done"]);
-  }
-  catch (e) {
-    console.error(e)
-  }
-}
+//     renderNewBotMessage();
+//     appendBotMessage(resp_json["response"], resp_json["done"]);
+//   }
+//   catch (e) {
+//     console.error(e)
+//   }
+// }
 
 const addModelName = (model: string) => {
   const newOption = document.createElement("option");
   newOption.value = model;
   newOption.text = `Model ${model}`;
-  selector.appendChild(newOption);
+  modelsSelector.appendChild(newOption);
 };
 
 const loadModels = async () => {
-  try {
-    const resp = await fetch(`/tags`, {
-      headers: { "Content-Type": "application/json" },
-    });
-    const resp_json = await resp.json();
-    resp_json.models.forEach((r: { model: string }) => {
-      addModelName(r.model);
-    });
-  } catch (error) {
-    console.error("Failed to load models:", error);
-  }
+  const models = await queryApi("GET", "models").catch(console.error) as string[]
+  models.forEach(addModelName)
 };
+
+const addCategoryLable = (category: string) => {
+  const catLabel = document.createElement("label");
+  catLabel.className = "toggle-container"
+  const chekBox = document.createElement("input");
+  chekBox.type = "checkbox"
+  // TODO: Add id
+  const span = document.createElement("span");
+  span.className = "toggle-label"
+  span.innerHTML = category
+  catLabel.appendChild(chekBox)
+  catLabel.appendChild(span)
+  categorySelector.appendChild(catLabel);
+};
+
+const loadCategories = async () => {
+  const cats = await queryApi("GET", "categories") as string[]
+  cats.forEach(addCategoryLable)
+}
 
 const loadModel = () => {
   preloader.style.display = "inline-block";
   messageInput.disabled = true;
   sendButton.disabled = true;
 
-  queryChat(false).then(() => {
-    preloader.style.display = "none";
-    messageInput.disabled = false;
-    sendButton.disabled = false;
-  });
+  // queryChat(false).then(() => {
+  //   preloader.style.display = "none";
+  //   messageInput.disabled = false;
+  //   sendButton.disabled = false;
+  // });
 };
-
-(() => {
-  sendButton.addEventListener("click", () => {
-    console.log("CLICK")
-    const message = messageInput.value.trim();
-    // if (!selectedModel) {
-    //   alert("Model was not selected");
-    //   return;
-    // }
-    if (message) {
-      const msg: Message = { role: "user", content: message };
-      renderMessage(msg);
-      addMessage(msg);
-      queryChatGenerate();
-    }
-
-    messageInput.value = "";
-  });
-
-  addCategotyButton.addEventListener("click", () => {
-    console.log("AAAAA")
-    queryApi("GET", "test").then(console.log)
-  })
-
-  messageInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-      sendButton.click();
-    }
-  });
-
-  selector.addEventListener("change", (e) => {
-    const target = e.target as HTMLSelectElement;
-    selectedModel = target.value;
-    loadModel();
-    cleanChatHistory();
-    chatBox.innerHTML = "";
-  });
-
-  loadModels();
-  cleanChatHistory();
-})();
 
 
 type QueryMethod = "GET" | "POST" | "DELETE" | "PUT" | "PATCH";
@@ -297,7 +264,7 @@ const alertError = (message: string) => {
 }
 
 
-const queryApi = async (method: QueryMethod, endpoint: string | string[], parameters?: Prms, body?: {} | File, headers?: HeadersInit) => {
+const queryApi = async (method: QueryMethod, endpoint: string | string[], parameters?: Prms, body?: {} | File | File[], headers?: HeadersInit) => {
   const path = constructPath(endpoint, parameters);
   const init: RequestInit = {
     method: method,
@@ -312,6 +279,14 @@ const queryApi = async (method: QueryMethod, endpoint: string | string[], parame
       const formData = new FormData()
       formData.append("file", body)
       init.body = formData;
+    } else if (Array.isArray(body) && body.every(item => item instanceof File)) {
+      const formData = new FormData();
+      body.forEach((file) => {
+        console.log(file)
+        formData.append('files', file);
+      });
+      init.body = formData;
+      console.log(init)
     } else {
       init.body = JSON.stringify(body);
     }
@@ -322,3 +297,68 @@ const queryApi = async (method: QueryMethod, endpoint: string | string[], parame
   }
   return await response.json()
 }
+
+const addCategory = () => {
+  loadFilesElement.click()
+}
+
+(() => {
+  sendButton.addEventListener("click", () => {
+    console.log("CLICK")
+    const message = messageInput.value.trim();
+    // if (!selectedModel) {
+    //   alert("Model was not selected");
+    //   return;
+    // }
+    if (message) {
+      const msg: Message = { role: "user", content: message };
+      renderMessage(msg);
+      addMessage(msg);
+      // queryChatGenerate();
+    }
+
+    messageInput.value = "";
+  });
+
+  addCategotyButton.addEventListener("click", () => {
+    // queryApi("GET", "test").then(console.log)
+    addCategory()
+  })
+
+  messageInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      sendButton.click();
+    }
+  });
+
+  modelsSelector.addEventListener("change", (e) => {
+    const target = e.target as HTMLSelectElement;
+    selectedModel = target.value;
+    loadModel();
+    cleanChatHistory();
+    chatBox.innerHTML = "";
+  });
+  loadFilesElement.addEventListener("change", (e) => {
+    const target = e.target as HTMLInputElement;
+    const files = target.files;
+
+    if (!files) {
+      console.log('No files selected.');
+      return;
+    }
+
+    if (files.length === 0) {
+      console.log('No files selected.');
+      return;
+    }
+    queryApi("POST", "upload_files", {category: "test3"}, Array.from(files), {})
+      .then(console.log)
+      .catch(console.error)
+  })
+
+
+
+  loadCategories()
+  loadModels();
+  cleanChatHistory();
+})();

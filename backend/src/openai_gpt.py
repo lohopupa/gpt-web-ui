@@ -1,4 +1,9 @@
+from io import BufferedReader
+import io
 import os
+import shutil
+import tempfile
+from fastapi import UploadFile
 from openai import OpenAI
 import time
 
@@ -23,12 +28,20 @@ def get_or_create_vector_store(category):
 
 
 
-def upload_file(file, category) -> bool:
+async def upload_file(file: UploadFile, category) -> str:
     vector_store = get_or_create_vector_store(category)
     main_vector_store = get_or_create_vector_store(MAIN_VECTOR_STORE_NAME)
 
     try:
-        file_stream = [file]
+        fp = os.path.join("/tmp", file.filename)
+        with open(fp, "wb") as f:
+            f.write(await file.read())
+        
+        # file_content = await file.read()
+        # buffer = io.BytesIO(file_content)
+        # buffer.name = file.filename
+    
+        file_stream = [open(fp, "rb")]
         
         # Загрузка файла в категорийный vector_store
         file_batch = client.beta.vector_stores.file_batches.upload_and_poll(
@@ -40,6 +53,7 @@ def upload_file(file, category) -> bool:
             vector_store_id=main_vector_store.id, files=file_stream
         )
 
+
         # Ожидание завершения обработки файла
         while file_batch.status == 'in_progress' or file_batch_main.status == 'in_progress':
             print("Waiting for files to be processed...")
@@ -48,10 +62,9 @@ def upload_file(file, category) -> bool:
             file_batch_main = client.beta.vector_stores.file_batches.retrieve(file_batch_main.id)
 
         print("Files processed.")
-        return True
+        return None
     except Exception as e:
-        print(f"Error uploading file: {e}")
-        return False
+        return f"Error uploading file: {e}"
 
 def get_assistant_id():
     if len(client.beta.assistants.list().data) == 0:
