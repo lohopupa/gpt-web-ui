@@ -13,10 +13,18 @@ import logging
 from app_types import *
 import database
 from typing import List
-
+from starlette.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 log = logging.Logger(name="ollama", level=10).info
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
 
 @app.on_event("startup")
 async def startup_event():

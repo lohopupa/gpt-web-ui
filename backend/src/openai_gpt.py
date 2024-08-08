@@ -26,6 +26,24 @@ def get_or_create_vector_store(category):
     new_vector_store = client.beta.vector_stores.create(name=category)
     return new_vector_store
 
+def get_file_id(filename):
+    response = client.files.list(purpose="assistants")
+    files = list(response.data)
+    for file in files:
+        if file.filename == filename:
+            return file.id
+
+def get_file_ids(filenames):
+    response = client.files.list(purpose="assistants")
+    files = list(response.data)
+    file_ids = []
+    
+    for filename in filenames:
+        for file in files:
+            if file.filename == filename:
+                file_ids.append(file.id)
+                break
+    return file_ids
 
 
 async def upload_file(file: UploadFile, category) -> str:
@@ -33,35 +51,27 @@ async def upload_file(file: UploadFile, category) -> str:
     main_vector_store = get_or_create_vector_store(MAIN_VECTOR_STORE_NAME)
 
     try:
-        # fp = os.path.join("/tmp", file.filename)
-        # with open(fp, "wb") as f:
-        #     content = await file.read()
-        #     f.write(content)
-        
-        # file_stream = [open(fp, "rb")]
         file_content = await file.read()
         buffer = io.BytesIO(file_content)
         buffer.name = file.filename
     
         file_stream = [buffer]
-        
-        
-        # Загрузка файла в категорийный vector_store
-        file_batch = client.beta.vector_stores.file_batches.upload_and_poll(
-            vector_store_id=vector_store.id, files=file_stream
-        )
 
         # Загрузка файла в основной vector_store
         file_batch_main = client.beta.vector_stores.file_batches.upload_and_poll(
             vector_store_id=main_vector_store.id, files=file_stream
         )
+        file_id = get_file_id(file.filename)
 
+        if category != MAIN_VECTOR_STORE_NAME:
+            # Загрузка файла в категорийный vector_store
+            client.beta.vector_stores.file_batches.upload_and_poll(
+                vector_store_id=vector_store.id, file_ids=[file_id]
+        )
 
-        # Ожидание завершения обработки файла
-        while file_batch.status == 'in_progress' or file_batch_main.status == 'in_progress':
+        while file_batch_main.status == 'in_progress':
             print("Waiting for files to be processed...")
             time.sleep(5)
-            file_batch = client.beta.vector_stores.file_batches.retrieve(file_batch.id)
             file_batch_main = client.beta.vector_stores.file_batches.retrieve(file_batch_main.id)
 
         print("Files processed.")
@@ -143,7 +153,7 @@ def ask_question_for_vector_store(question, vector_store_id, assistant_id):
         return None
 
 
-#print(generate_answer("Какое значение в столбце 'Байт 1' указывает на фиксацию использования водителем мобильного телефона?"))
+print(generate_answer("расскажи мне про AutoGRAPH GSMConf 5.0",categories=["test3"]))
 
 
 # class EventHandler(AssistantEventHandler):
