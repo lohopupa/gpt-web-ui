@@ -8,9 +8,9 @@ async def add_file(file, category, db):
     print("TEXT LOADED")
     ollama_result = ollama.upload_file(file.filename, text, category, db)
     print("OLLAMA DONE")
-    # openai_result = await openai_gpt.upload_file(file, category)
+    openai_result = await openai_gpt.upload_file(file, category)
     print("OPENAI DONE")
     return {
         "ollama_result": ollama_result,
-        # "openai_result": openai_result,
+        "openai_result": openai_result,
     }

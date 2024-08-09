@@ -59,11 +59,11 @@ def generate(request: GenerateRequest, db: Session):
     query_embedding = get_embedding(request.query)
     embeddings = load_embeddings_from_db(request.categories, db)
     file_id, chunk_id = find_best_match_cosine(query_embedding, embeddings)
-    delta = request.delta or 20
+    delta = request.delta or 50
     embs = db.query(Embedding).filter(Embedding.file_id == file_id).filter(Embedding.chunk_id >= chunk_id - delta).filter(Embedding.chunk_id <= chunk_id + delta).all()
     data = " ".join([e.chunk_text for e in embs])
     prompt = prompt_template.format(data=data, query=request.query)
-
+    filename = db.query(File).filter(File.id == file_id).first().filename
     body = {
         "model": request.model,
         "prompt": prompt.encode().decode("utf-8"),
@@ -77,7 +77,7 @@ def generate(request: GenerateRequest, db: Session):
     resp = requests.post(OLLAMA_HOST + "/generate", json=body)
     if resp.status_code != 200:
         raise HTTPException(status_code=resp.status_code, detail=resp.text)
-    return resp.json()["response"]
+    return resp.json()["response"] + "\n" + filename
 
 def find_document(query: str, categories: list[str], db: Session):
     query_embedding = get_embedding(query)
@@ -106,19 +106,29 @@ def naive_bayes_predict(query_embedding, nb_model):
     return int(predicted_label)
     
 def find_best_match_cosine(query_embedding, embeddings: list[Embedding]):
-    best_match = None
-    highest_similarity = -1
+    # best_match = None
+    # highest_similarity = -1
     
-    query_embedding_array = np.array([query_embedding], dtype=np.float32)
+    # query_embedding_array = np.array([query_embedding], dtype=np.float32)
     
-    for e in embeddings:
-        embedding_array = np.array([np.frombuffer(e.embedding, dtype=np.float32)])
-        similarity = cosine_similarity(query_embedding_array, embedding_array)[0][0]
-        if similarity > highest_similarity:
-            highest_similarity = similarity
-            best_match = (e.file_id, e.chunk_id)
+    # for e in embeddings:
+    #     embedding_array = np.array([np.frombuffer(e.embedding, dtype=np.float32)])
+    #     similarity = cosine_similarity(query_embedding_array, embedding_array)[0][0]
+    #     if similarity > highest_similarity:
+    #         highest_similarity = similarity
+    #         best_match = (e.file_id, e.chunk_id)
     
-    return best_match
+    # return best_match
+    list_of_embeddings = [np.frombuffer(e.embedding, dtype=np.float32) for e in embeddings]
+    similarities = cosine_similarity([query_embedding], list_of_embeddings)[0]
+    
+    # Get the indices of the embeddings sorted by similarity (highest first)
+    closest_id = np.argsort(similarities)[::-1][0]
+    
+    # Retrieve the top N closest embeddings
+    closest_embedding = embeddings[closest_id]
+
+    return closest_embedding.file_id, closest_embedding.chunk_id
     
 def load_embeddings_from_db(categories: list[str], db: Session):
     if len(categories) == 0:
