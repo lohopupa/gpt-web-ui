@@ -1,5 +1,7 @@
 const sendButton = document.getElementById("sendButton") as HTMLButtonElement;
-const addCategotyButton = document.getElementById("loadButton") as HTMLButtonElement;
+const addCategotyButton = document.getElementById(
+  "loadButton"
+) as HTMLButtonElement;
 const themeButton = document.getElementById(
   "theme-button"
 ) as HTMLButtonElement;
@@ -7,12 +9,18 @@ const messageInput = document.getElementById(
   "messageInput"
 ) as HTMLInputElement;
 const chatBox = document.getElementById("chatBox") as HTMLDivElement;
-const modelsSelector = document.getElementById("model-select") as HTMLSelectElement;
-const categorySelector = document.getElementById("category-select") as HTMLDivElement;
+const modelsSelector = document.getElementById(
+  "model-select"
+) as HTMLSelectElement;
+const categorySelector = document.getElementById(
+  "category-select"
+) as HTMLDivElement;
 const preloader = document.getElementById("preloader") as HTMLDivElement;
-const loadFilesElement = document.getElementById("load-files") as HTMLInputElement;
+const loadFilesElement = document.getElementById(
+  "load-files"
+) as HTMLInputElement;
 
-const selectedCategories: string[] = []
+const selectedCategories: string[] = [];
 
 const getNextTheme = () => {
   const theme = localStorage.getItem("theme") ?? "light";
@@ -33,7 +41,6 @@ themeButton.addEventListener("click", () => applyTheme(getNextTheme()));
 type Role = "system" | "user" | "assistant";
 type Message = { role: Role; content: string };
 type ChatHistory = Message[];
-
 
 const chatHistory: ChatHistory = [];
 
@@ -89,22 +96,16 @@ const appendBotMessage = (text: string, done: boolean) => {
   }
 };
 
-
 const queryGenerate = async () => {
-  const resp = await queryApi(
-    "POST",
-    "generate",
-    undefined,
-    {
-      model: selectedModel,
-      query: chatHistory[chatHistory.length - 1].content,
-      categories: selectedCategories,
-
-    })
+  const resp = await queryApi("POST", "generate", undefined, {
+    model: selectedModel,
+    query: chatHistory[chatHistory.length - 1].content,
+    categories: selectedCategories,
+  });
 
   renderNewBotMessage();
   appendBotMessage(resp["response"], resp["done"]);
-}
+};
 
 const addModelName = (model: string) => {
   const newOption = document.createElement("option");
@@ -114,15 +115,17 @@ const addModelName = (model: string) => {
 };
 
 const loadModels = async () => {
-  const models = await queryApi("GET", "models").catch(console.error) as string[]
-  models.forEach(addModelName)
+  const models = (await queryApi("GET", "models").catch(
+    console.error
+  )) as string[];
+  models.forEach(addModelName);
 };
 
 const addCategoryLable = (category: string) => {
   const catLabel = document.createElement("label");
-  catLabel.className = "toggle-container"
+  catLabel.className = "toggle-container";
   const chekBox = document.createElement("input");
-  chekBox.type = "checkbox"
+  chekBox.type = "checkbox";
   chekBox.addEventListener("change", (event: Event) => {
     const target = event.target as HTMLInputElement;
     if (target.checked) {
@@ -138,18 +141,18 @@ const addCategoryLable = (category: string) => {
   });
   // TODO: Add id
   const span = document.createElement("span");
-  span.className = "toggle-label"
-  span.innerHTML = category
-  catLabel.appendChild(chekBox)
-  catLabel.appendChild(span)
+  span.className = "toggle-label";
+  span.innerHTML = category;
+  catLabel.appendChild(chekBox);
+  catLabel.appendChild(span);
   categorySelector.appendChild(catLabel);
 };
 
 const loadCategories = async () => {
-  const cats = await queryApi("GET", "categories") as string[]
-  categorySelector.innerHTML = ""
-  cats.forEach(addCategoryLable)
-}
+  const cats = (await queryApi("GET", "categories")) as string[];
+  categorySelector.innerHTML = "";
+  cats.forEach(addCategoryLable);
+};
 
 const loadModel = () => {
   preloader.style.display = "inline-block";
@@ -163,25 +166,21 @@ const loadModel = () => {
   // });
 };
 
-
 type QueryMethod = "GET" | "POST" | "DELETE" | "PUT" | "PATCH";
-type BasicTypes = string | number | boolean | null
+type BasicTypes = string | number | boolean | null;
 
 type Prms = {
-  [key: string]: BasicTypes
-}
+  [key: string]: BasicTypes;
+};
 
-const constructPath = (
-  endpoint: string | string[],
-  args?: Prms
-) => {
+const constructPath = (endpoint: string | string[], args?: Prms) => {
   if (Array.isArray(endpoint)) {
-    endpoint = endpoint.join("/")
+    endpoint = endpoint.join("/");
   }
   let path = `${window.location.protocol}//${window.location.host}/api/${endpoint}`;
   // let path = `http://speccy49home.ddns.net:5000/api/${endpoint}`;
   // let path = `http://5.164.181.30:5000/api/${endpoint}`;
-
+  let path = `http://localhost:5000/api/${endpoint}`;
   if (args)
     path +=
       "?" +
@@ -194,14 +193,19 @@ const constructPath = (
 
 const alertError = (message: string) => {
   return (e: any) => {
-    e = e as Error
-    const cause = e.cause ? (e.cause as { detail: string })["detail"] : null
-    alert(message + " " + cause)
-  }
-}
+    e = e as Error;
+    const cause = e.cause ? (e.cause as { detail: string })["detail"] : null;
+    alert(message + " " + cause);
+  };
+};
 
-
-const queryApi = async (method: QueryMethod, endpoint: string | string[], parameters?: Prms, body?: {} | File | File[], headers?: HeadersInit) => {
+const queryApi = async (
+  method: QueryMethod,
+  endpoint: string | string[],
+  parameters?: Prms,
+  body?: {} | File | File[],
+  headers?: HeadersInit
+) => {
   const path = constructPath(endpoint, parameters);
   const init: RequestInit = {
     method: method,
@@ -213,17 +217,20 @@ const queryApi = async (method: QueryMethod, endpoint: string | string[], parame
   };
   if (["POST", "PUT", "PATCH"].includes(method) && body) {
     if (body instanceof File) {
-      const formData = new FormData()
-      formData.append("file", body)
+      const formData = new FormData();
+      formData.append("file", body);
       init.body = formData;
-    } else if (Array.isArray(body) && body.every(item => item instanceof File)) {
+    } else if (
+      Array.isArray(body) &&
+      body.every((item) => item instanceof File)
+    ) {
       const formData = new FormData();
       body.forEach((file) => {
-        console.log(file)
-        formData.append('files', file);
+        console.log(file);
+        formData.append("files", file);
       });
       init.body = formData;
-      console.log(init)
+      console.log(init);
     } else {
       init.body = JSON.stringify(body);
     }
@@ -232,16 +239,16 @@ const queryApi = async (method: QueryMethod, endpoint: string | string[], parame
   if (!response.ok) {
     throw new Error(response.statusText, { cause: await response.json() });
   }
-  return await response.json()
-}
+  return await response.json();
+};
 
 const addCategory = () => {
-  loadFilesElement.click()
-}
+  loadFilesElement.click();
+};
 
 (() => {
   sendButton.addEventListener("click", () => {
-    console.log("CLICK")
+    console.log("CLICK");
     const message = messageInput.value.trim();
     if (!selectedModel) {
       alert("Model was not selected");
@@ -258,8 +265,8 @@ const addCategory = () => {
   });
 
   addCategotyButton.addEventListener("click", () => {
-    addCategory()
-  })
+    addCategory();
+  });
 
   messageInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
@@ -279,28 +286,32 @@ const addCategory = () => {
     const files = target.files;
 
     if (!files) {
-      console.log('No files selected.');
+      console.log("No files selected.");
       return;
     }
 
     if (files.length === 0) {
-      console.log('No files selected.');
+      console.log("No files selected.");
       return;
     }
-    const category = prompt("New category name")
-    if (!category) return
-    queryApi("POST", "upload_files", { category: category }, Array.from(files), {})
+    const category = prompt("New category name");
+    if (!category) return;
+    queryApi(
+      "POST",
+      "upload_files",
+      { category: category },
+      Array.from(files),
+      {}
+    )
       .then(() => {
-        alert("DONE!")
-        loadCategories()
-        loadFilesElement.innerHTML = ""
+        alert("DONE!");
+        loadCategories();
+        loadFilesElement.innerHTML = "";
       })
-      .catch(console.error)
-  })
+      .catch(console.error);
+  });
 
-
-
-  loadCategories()
+  loadCategories();
   loadModels();
   cleanChatHistory();
 })();

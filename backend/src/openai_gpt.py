@@ -14,9 +14,9 @@ else:
     load_dotenv()
     api_key = os.getenv('OPENAI_API_KEY')
 
-client = OpenAI(api_key=api_key, base_url="http://gpt.lhpa.ru/v1")
+client = OpenAI(api_key=api_key)#, base_url="http://gpt.lhpa.ru/v1")
 
-MAIN_VECTOR_STORE_NAME = "415 Base"
+MAIN_VECTOR_STORE_NAME = "MAIN"
 
 def get_or_create_vector_store(category):
     vector_stores = client.beta.vector_stores.list()
@@ -63,16 +63,19 @@ async def upload_file(file: UploadFile, category) -> str:
         )
         file_id = get_file_id(file.filename)
 
-        if category != MAIN_VECTOR_STORE_NAME:
-            # Загрузка файла в категорийный vector_store
-            client.beta.vector_stores.file_batches.upload_and_poll(
-                vector_store_id=vector_store.id, file_ids=[file_id]
-        )
-
         while file_batch_main.status == 'in_progress':
             print("Waiting for files to be processed...")
             time.sleep(5)
             file_batch_main = client.beta.vector_stores.file_batches.retrieve(file_batch_main.id)
+
+        if category != MAIN_VECTOR_STORE_NAME:
+            # Загрузка файла в категорийный vector_store
+            client.beta.vector_stores.file_batches.create(
+                vector_store_id=vector_store.id,
+                file_ids=[file_id]
+            )
+
+
 
         print("Files processed.")
         return None

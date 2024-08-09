@@ -53,7 +53,7 @@ async def generate(request: GenerateRequest, db: Session = Depends(get_db)):
     if request.model in ollama.USING_MODELS:
         return {"response": ollama.generate(request, db), "done": True}
     elif request.model == "openai_chatgpt":
-        return {"response": openai_gpt.generate(request), "done": True}
+        return {"response": openai_gpt.generate_answer(request.query,request.categories), "done": True}
     raise HTTPException(status_code=500, detail="NOT IMPLEMENTED")
 
 
